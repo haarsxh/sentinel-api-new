@@ -7,25 +7,51 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  scanner-selftest:
-    name: Scanner self-test
+  native:
+    name: Self-test (native engine)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
+      - run: npm ci
       - name: Run scanner self-test
         run: npm test
 
+  hadrian:
+    name: Self-test (native + Hadrian, verified)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: false
+      - name: Cache Hadrian build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/bin/hadrian
+            ~/go/pkg/mod
+            .hadrian
+          key: hadrian-${{ runner.os }}-${{ hashFiles('scripts/setup-hadrian.sh') }}
+      - run: npm ci
+      - name: Install Hadrian
+        run: npm run setup:hadrian
+      - name: Run self-test with Hadrian required
+        run: npm test
+        env:
+          SENTINEL_REQUIRE_HADRIAN: "1"
       - name: Upload findings report
         if: always()
         uses: actions/upload-artifact@v4
@@ -34,8 +60,8 @@ jobs:
           path: report/data/latest.json
           if-no-files-found: ignore
 
-  # Demonstrates how a real project would gate deploys on API findings.
-  # Runs the scanner against the bundled sandbox and fails on HIGH+ findings.
+  # Shows how a real project gates deploys on API findings: the scan exits
+  # non-zero when anything at or above --fail-on is confirmed.
   security-gate-example:
     name: Security gate (demo)
     runs-on: ubuntu-latest
@@ -45,12 +71,11 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
       - name: Start sandbox target
         run: |
           node demo-api/server.js &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4000/health && break; sleep 0.3; done
       - name: Scan (gate on HIGH+)
-        run: node scanner/cli.js --config scanner/targets/demo.json --fail-on high
+        run: node scanner/cli.js --config scanner/targets/demo.json --engine native --fail-on high
         continue-on-error: true # sandbox is intentionally vulnerable; this step is illustrative

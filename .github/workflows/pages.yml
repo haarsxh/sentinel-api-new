@@ -1,0 +1,71 @@
+name: Publish dashboard
+
+# Scans the sandbox with both engines and publishes the dashboard to GitHub Pages:
+# on every push to main, nightly, and on demand. Each run appends to the
+# findings history the dashboard charts over time.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: false
+      - name: Cache Hadrian build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/bin/hadrian
+            ~/go/pkg/mod
+            .hadrian
+          key: hadrian-${{ runner.os }}-${{ hashFiles('scripts/setup-hadrian.sh') }}
+      - run: npm ci
+      - run: npm run setup:hadrian
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Start sandbox target
+        run: |
+          node demo-api/server.js &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4000/health && break; sleep 0.3; done
+      - name: Scan with both engines
+        run: node scanner/cli.js --config scanner/targets/demo.json --engine all || [ $? -eq 2 ]
+      - name: Build site
+        run: |
+          mkdir -p _site/data
+          cp report/index.html _site/
+          cp report/data/latest.json _site/data/
+          node scripts/append-history.mjs "${{ steps.pages.outputs.base_url }}/data/history.json" report/data/latest.json _site/data/history.json
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: scan
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
