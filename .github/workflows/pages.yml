@@ -43,7 +43,7 @@ jobs:
       - run: npm ci
       - run: npm run setup:hadrian
       - id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Start sandbox target
         run: |
           node demo-api/server.js &
