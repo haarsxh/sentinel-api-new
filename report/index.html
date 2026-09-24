@@ -1,127 +1,436 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SentinelAPI — Findings</title>
+  <title>SentinelAPI findings</title>
+  <meta name="description" content="Verified, severity-ranked API security findings from SentinelAPI." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0d1117; --panel: #161b22; --panel-2: #1c2230; --border: #2a2f3a;
-      --text: #e6edf3; --muted: #9aa4b2; --accent: #58a6ff;
-      --crit: #f85149; --high: #ff9800; --med: #d4a72c; --low: #3fb950; --info: #8b949e;
+      --paper: #eef1f5; --sheet: #ffffff; --ink: #1b2330; --ink-2: #4a5566; --rule: #d3dae3;
+      --focus: #2f5bea; --code-bg: #f4f6f9;
+      --crit: #c4262e; --high: #c9601a; --med: #9a7a0c; --low: #2f7d52; --info: #6b7686;
+      --ok: #2f7d52; --maybe: #9a7a0c; --no: #6b7686;
+      --crit-tint: #fbe9ea; --high-tint: #fbefe5; --med-tint: #f7f1dc; --low-tint: #e6f3ec; --info-tint: #eceff3;
+      color-scheme: light;
     }
-    :root[data-theme="light"] {
-      --bg: #f6f8fa; --panel: #ffffff; --panel-2: #f0f3f6; --border: #d0d7de;
-      --text: #1f2328; --muted: #57606a; --accent: #0969da;
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --paper: #121820; --sheet: #19212c; --ink: #e3e8ef; --ink-2: #9ba7b8; --rule: #2b3645;
+        --focus: #7c9cff; --code-bg: #10161e;
+        --crit: #ff6b6f; --high: #f39a55; --med: #e0c055; --low: #5cc48c; --info: #9ba7b8;
+        --ok: #5cc48c; --maybe: #e0c055; --no: #9ba7b8;
+        --crit-tint: #3a1c20; --high-tint: #3a2718; --med-tint: #332c14; --low-tint: #16301f; --info-tint: #222b37;
+        color-scheme: dark;
+      }
     }
+    :root[data-theme="dark"] {
+      --paper: #121820; --sheet: #19212c; --ink: #e3e8ef; --ink-2: #9ba7b8; --rule: #2b3645;
+      --focus: #7c9cff; --code-bg: #10161e;
+      --crit: #ff6b6f; --high: #f39a55; --med: #e0c055; --low: #5cc48c; --info: #9ba7b8;
+      --ok: #5cc48c; --maybe: #e0c055; --no: #9ba7b8;
+      --crit-tint: #3a1c20; --high-tint: #3a2718; --med-tint: #332c14; --low-tint: #16301f; --info-tint: #222b37;
+      color-scheme: dark;
+    }
+
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg); color: var(--text); line-height: 1.5; }
-    header { padding: 24px 20px; border-bottom: 1px solid var(--border); display: flex;
-      align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-    .brand { display: flex; align-items: baseline; gap: 12px; }
-    .brand h1 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
-    .brand .tag { color: var(--muted); font-size: 13px; }
-    main { max-width: 1000px; margin: 0 auto; padding: 20px; }
-    .meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 28px; }
-    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-    .card .n { font-size: 28px; font-weight: 700; }
-    .card .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .finding { background: var(--panel); border: 1px solid var(--border); border-left-width: 4px;
-      border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
-    .finding.CRITICAL { border-left-color: var(--crit); }
-    .finding.HIGH { border-left-color: var(--high); }
-    .finding.MEDIUM { border-left-color: var(--med); }
-    .finding.LOW { border-left-color: var(--low); }
-    .finding.INFO { border-left-color: var(--info); }
-    .fhead { padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
-    .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
-    .badge.CRITICAL { background: rgba(248,81,73,.15); color: var(--crit); }
-    .badge.HIGH { background: rgba(255,152,0,.15); color: var(--high); }
-    .badge.MEDIUM { background: rgba(212,167,44,.15); color: var(--med); }
-    .badge.LOW { background: rgba(63,185,80,.15); color: var(--low); }
-    .badge.INFO { background: rgba(139,148,158,.15); color: var(--info); }
-    .fhead .t { font-weight: 600; flex: 1; }
-    .fhead .ep { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted); }
-    .fbody { padding: 0 16px 16px; display: none; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: var(--paper); color: var(--ink);
+      font: 400 17px/1.55 "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+    @media (max-width: 600px) { .wrap { padding: 0 16px; } body { font-size: 16px; } }
+
+    /* top bar */
+    .bar { border-bottom: 1px solid var(--rule); background: var(--sheet); }
+    .bar .wrap { display: flex; align-items: center; gap: 16px; min-height: 60px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+    .logo svg { flex: none; }
+    .target { color: var(--ink-2); font-size: 15px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .target code { color: var(--ink); font-size: 14px; }
+    .spacer { flex: 1; }
+    .theme { background: none; border: 1px solid var(--rule); color: var(--ink); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+
+    /* verdict */
+    .verdict { padding: 48px 0 28px; }
+    .verdict h1 { font-size: clamp(30px, 5vw, 50px); line-height: 1.08; letter-spacing: -0.025em; margin: 0 0 14px; max-width: 20ch; font-weight: 700; }
+    .verdict p { margin: 0; color: var(--ink-2); max-width: 62ch; font-size: 18px; }
+
+    /* severity strip */
+    .strip { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--rule); margin: 28px 0 12px; }
+    .strip span { display: block; height: 100%; }
+    .strip span + span { border-left: 2px solid var(--paper); }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 15px; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
+    .legend b { color: var(--ink); font-size: 17px; margin-right: 4px; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+
+    /* triage funnel — the signature element */
+    .funnel { margin: 40px 0 8px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 14px; padding: 24px; }
+    .funnel h2 { font-size: 20px; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .funnel > p { margin: 0 0 22px; color: var(--ink-2); max-width: 70ch; }
+    .flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; align-items: stretch; }
+    .stage { position: relative; padding: 4px 28px 4px 0; }
+    .stage + .stage { padding-left: 28px; border-left: 1px dashed var(--rule); }
+    .stage .n { font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .stage .what { margin-top: 6px; color: var(--ink-2); font-size: 15px; max-width: 26ch; }
+    .outcomes { display: grid; gap: 8px; }
+    .outcome { display: flex; align-items: baseline; gap: 10px; font-size: 15px; }
+    .outcome .n2 { font-weight: 700; font-size: 22px; min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums; }
+    .outcome.ok .n2 { color: var(--ok); } .outcome.maybe .n2 { color: var(--maybe); } .outcome.no .n2 { color: var(--no); }
+    .engines-row { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-2); }
+    @media (max-width: 720px) {
+      .flow { grid-template-columns: 1fr; gap: 18px; }
+      .stage { padding: 0; }
+      .stage + .stage { padding-left: 0; padding-top: 18px; border-left: 0; border-top: 1px dashed var(--rule); }
+    }
+
+    /* trend */
+    .trend { margin-top: 20px; }
+    .trend h2 { font-size: 20px; margin: 0 0 4px; }
+    .trend p { margin: 0 0 14px; color: var(--ink-2); }
+    .trend svg { width: 100%; height: 90px; display: block; }
+
+    /* controls */
+    section.list { margin-top: 48px; }
+    .list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .list-head h2 { font-size: 26px; margin: 0; letter-spacing: -0.015em; }
+    .count { color: var(--ink-2); }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+    .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 9px; overflow: hidden; background: var(--sheet); }
+    .seg button { background: none; border: 0; color: var(--ink-2); font: inherit; font-size: 14px; padding: 7px 12px; cursor: pointer; }
+    .seg button + button { border-left: 1px solid var(--rule); }
+    .seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+    .search { flex: 1; min-width: 200px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 9px; padding: 7px 12px; font: inherit; font-size: 15px; color: var(--ink); }
+
+    /* findings */
+    .finding { background: var(--sheet); border: 1px solid var(--rule); border-radius: 12px; margin-bottom: 10px; position: relative; overflow: hidden; }
+    .finding::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--sev); }
+    .finding > button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; width: 100%; padding: 16px 18px 16px 22px; cursor: pointer; }
+    .finding > button:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+    .sev { font-weight: 700; font-size: 14px; color: var(--sev); }
+    .ftitle { font-weight: 700; font-size: 17px; }
+    .ep { display: block; font-size: 13.5px; color: var(--ink-2); margin-top: 2px; overflow-wrap: anywhere; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .tag { font-size: 13px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; }
+    .tag.both { border-color: var(--ok); color: var(--ok); }
+    .tag.unv { border-color: var(--maybe); color: var(--maybe); }
+    @media (max-width: 720px) {
+      .finding > button { grid-template-columns: 1fr; }
+      .tags { justify-content: flex-start; }
+    }
+    .fbody { display: none; padding: 4px 22px 22px 22px; border-top: 1px solid var(--rule); }
     .finding.open .fbody { display: block; }
-    .fbody p { margin: 8px 0; }
-    .fbody .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 14px; }
-    pre { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
-      overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; margin: 6px 0 0; }
-    .conf { font-size: 12px; color: var(--muted); }
-    button.theme { background: var(--panel); color: var(--text); border: 1px solid var(--border);
-      border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
-    .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
-    a { color: var(--accent); }
+    .fbody h3 { font-size: 15px; margin: 20px 0 6px; color: var(--ink-2); font-weight: 700; }
+    .fbody p { margin: 0; max-width: 72ch; }
+    .meaning { background: var(--sev-tint); border-radius: 10px; padding: 14px 16px; margin-top: 18px; }
+    .meaning p { max-width: 70ch; }
+    .how { color: var(--ink-2); font-size: 15px; margin-top: 8px !important; }
+    .codebox { position: relative; }
+    pre { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 9px; padding: 12px 14px; margin: 0; overflow-x: auto; font-size: 13px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .codebox pre { padding-right: 76px; }
+    .copy { position: absolute; top: 8px; right: 8px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 7px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+    details.raw summary { cursor: pointer; color: var(--ink-2); font-size: 15px; margin-top: 18px; }
+    details.raw pre { margin-top: 8px; max-height: 320px; }
+
+    /* filtered */
+    section.noise { margin: 48px 0 24px; }
+    section.noise h2 { font-size: 22px; margin: 0 0 4px; }
+    section.noise > p { color: var(--ink-2); margin: 0 0 16px; max-width: 70ch; }
+    .noise-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+    .noise-list li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--rule); font-size: 15px; }
+    .noise-list .why { color: var(--ink-2); }
+    .noise-list .st { font-weight: 700; color: var(--no); }
+    .noise-list .st.dup { color: var(--ok); }
+    @media (max-width: 600px) { .noise-list li { grid-template-columns: 1fr; } }
+
+    .empty { background: var(--sheet); border: 1px dashed var(--rule); border-radius: 12px; padding: 36px 24px; color: var(--ink-2); }
+    .empty code { color: var(--ink); }
+    footer { color: var(--ink-2); font-size: 14px; padding: 28px 0 48px; border-top: 1px solid var(--rule); margin-top: 32px; }
+    footer a { color: var(--ink); }
+    @media (prefers-reduced-motion: no-preference) {
+      .strip span { transition: flex-grow .6s ease; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <h1>SentinelAPI</h1>
-      <span class="tag">Zero-Trust API Vulnerability Scanner</span>
+  <div class="bar">
+    <div class="wrap">
+      <div class="logo">
+        <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2 4 5.5v6.6c0 5.5 3.8 10.1 9 11.9 5.2-1.8 9-6.4 9-11.9V5.5L13 2Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="m9 13 3 3 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        SentinelAPI
+      </div>
+      <div class="target" id="target"></div>
+      <div class="spacer"></div>
+      <button class="theme" id="theme" type="button">Dark theme</button>
     </div>
-    <button class="theme" onclick="toggleTheme()">Toggle theme</button>
-  </header>
-  <main>
-    <div class="meta" id="meta">Loading report…</div>
-    <div class="cards" id="cards"></div>
-    <div id="findings"></div>
+  </div>
+
+  <main class="wrap" id="app">
+    <section class="verdict"><h1>Loading the latest scan…</h1></section>
   </main>
 
   <script>
-    function toggleTheme() {
-      const r = document.documentElement;
-      r.dataset.theme = r.dataset.theme === "light" ? "dark" : "light";
-    }
     const SEV = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"];
-    function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+    const SEV_NAME = { CRITICAL: "Critical", HIGH: "High", MEDIUM: "Medium", LOW: "Low", INFO: "Info" };
+    const SEV_VAR = { CRITICAL: "crit", HIGH: "high", MEDIUM: "med", LOW: "low", INFO: "info" };
+
+    // Plain-language explanations for non-specialists, keyed by finding class.
+    const MEANING = {
+      bola: "A signed-in user can open records that belong to someone else just by changing the id in the URL.",
+      "bola-mutation": "A signed-in user can change or delete records that belong to someone else.",
+      "data-exposure": "The API sends back private data (like passwords, ID numbers or card numbers) that the app never needs to show.",
+      "missing-auth": "Anyone on the internet can call this endpoint without signing in.",
+      "rate-limit": "The login endpoint lets an attacker try passwords as fast as they like, which makes guessing accounts practical.",
+      bfla: "A regular user can use a function meant only for administrators.",
+      "debug-disclosure": "When sent bad input, the API replies with internal error details — file paths and code locations — that help an attacker map the system.",
+      "verb-tampering": "Switching the HTTP method (for example GET to DELETE) gets past the access checks.",
+    };
+
+    const $ = (s, el = document) => el.querySelector(s);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
+
+    // --- theme ------------------------------------------------------------------
+    const themeBtn = $("#theme");
+    function currentTheme() {
+      const set = document.documentElement.dataset.theme;
+      if (set) return set;
+      return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    function syncThemeLabel() { themeBtn.textContent = currentTheme() === "dark" ? "Light theme" : "Dark theme"; }
+    try { const saved = localStorage.getItem("sentinel-theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}
+    syncThemeLabel();
+    themeBtn.addEventListener("click", () => {
+      const next = currentTheme() === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem("sentinel-theme", next); } catch {}
+      syncThemeLabel();
+    });
+
+    // --- data -------------------------------------------------------------------
+    async function getJSON(path) {
+      const res = await fetch(path, { cache: "no-store" });
+      if (!res.ok) throw new Error(res.status);
+      return res.json();
+    }
 
     async function load() {
       let report;
-      try {
-        const res = await fetch("data/latest.json", { cache: "no-store" });
-        report = await res.json();
-      } catch (e) {
-        document.getElementById("meta").textContent = "No report found. Run: npm run scan:demo";
+      try { report = await getJSON("data/latest.json"); }
+      catch {
+        $("#app").innerHTML = `<section class="verdict"><h1>No scan yet</h1>
+          <div class="empty">Start the sandbox with <code>npm run demo</code>, then run <code>npm run scan:demo</code> and reload this page.</div></section>`;
         return;
       }
-      render(report);
+      let history = null;
+      try { history = await getJSON("data/history.json"); } catch {}
+      render(report, history);
     }
 
-    function render(report) {
-      document.getElementById("meta").innerHTML =
-        `Target <strong>${esc(report.target.baseUrl)}</strong> · scanned ${new Date(report.finishedAt).toLocaleString()} · checks: ${report.checksRun.join(", ")}`;
+    // --- rendering ----------------------------------------------------------------
+    const state = { sev: "all", engine: "all", q: "" };
 
-      const cards = document.getElementById("cards");
-      cards.innerHTML = `<div class="card"><div class="n">${report.summary.total}</div><div class="l">Total</div></div>` +
-        SEV.map(s => `<div class="card"><div class="n" style="color:var(--${s.toLowerCase().slice(0,4)})">${report.summary.counts[s] || 0}</div><div class="l">${s}</div></div>`).join("");
-
-      const wrap = document.getElementById("findings");
-      if (!report.findings.length) { wrap.innerHTML = '<div class="empty">No findings. 🎉</div>'; return; }
-
-      wrap.innerHTML = report.findings.map((f, i) => `
-        <div class="finding ${f.severity}" id="f${i}">
-          <div class="fhead" onclick="document.getElementById('f${i}').classList.toggle('open')">
-            <span class="badge ${f.severity}">${f.severity}</span>
-            <span class="t">${esc(f.title)}</span>
-            <span class="ep">${esc(f.endpoint)}</span>
-          </div>
-          <div class="fbody">
-            <p>${esc(f.summary)}</p>
-            <p class="conf">Confidence: ${Math.round((f.confidence || 0) * 100)}%</p>
-            <p>${esc(f.detail || "")}</p>
-            <div class="label">Remediation</div>
-            <p>${esc(f.remediation || "")}</p>
-            <div class="label">Reproduce (proof-of-concept)</div>
-            <pre>${esc(f.poc || "n/a")}</pre>
-            <div class="label">Evidence</div>
-            <pre>${esc(JSON.stringify(f.evidence, null, 2))}</pre>
-          </div>
-        </div>`).join("");
+    function verdictLine(r) {
+      const c = r.summary.counts;
+      if (!r.summary.total) return { h: "No confirmed issues on this API.", p: "Every check came back clean. Keep the pipeline running so new endpoints are covered as they ship." };
+      const bad = (c.CRITICAL || 0) + (c.HIGH || 0);
+      const h = `${plural(r.summary.total, "confirmed issue")}, ${bad} of them need fixing before release.`;
+      const classes = new Set(r.findings.map((f) => f.checkId));
+      const bits = [];
+      if (classes.has("bola")) bits.push("users can read each other's records");
+      if (classes.has("data-exposure")) bits.push("responses leak private data");
+      if (classes.has("missing-auth")) bits.push("some endpoints skip sign-in entirely");
+      const p = bits.length
+        ? `The most serious problems: ${bits.join(", ")}. Each finding below includes a command that reproduces it and the fix.`
+        : "Each finding below includes a command that reproduces it and the fix.";
+      return { h, p };
     }
+
+    function severityStrip(r) {
+      const c = r.summary.counts, total = r.summary.total || 1;
+      const spans = SEV.filter((s) => c[s]).map((s) => `<span style="flex-grow:${c[s] / total};background:var(--${SEV_VAR[s]})" title="${SEV_NAME[s]}: ${c[s]}"></span>`).join("");
+      const legend = SEV.filter((s) => c[s] || s !== "INFO").map((s) => `<li><span class="dot" style="background:var(--${SEV_VAR[s]})"></span><b>${c[s] || 0}</b>${SEV_NAME[s]}</li>`).join("");
+      return `<div class="strip" role="img" aria-label="Severity breakdown">${spans}</div><ul class="legend">${legend}</ul>`;
+    }
+
+    function funnel(r) {
+      const h = r.engines?.hadrian;
+      const nat = r.engines?.native;
+      if (!h) {
+        return `<section class="funnel"><h2>How these were found</h2>
+          <p>Native checks replayed every request as each test identity, using known object ownership, so every finding here is reproduced rather than guessed.
+          Install the Hadrian engine (<code>npm run setup:hadrian</code>) to add a second, independent opinion.</p></section>`;
+      }
+      return `<section class="funnel" aria-labelledby="funnel-h">
+        <h2 id="funnel-h">Noise removed before it reached you</h2>
+        <p>Hadrian raised ${plural(h.rawCandidates, "raw alert")}. SentinelAPI grouped duplicates, then re-tested every group against the live sandbox with the right identities and object owners.</p>
+        <div class="flow">
+          <div class="stage"><div class="n">${h.rawCandidates}</div><div class="what">raw alerts from Hadrian's templates</div></div>
+          <div class="stage"><div class="n">${h.groups}</div><div class="what">distinct issues after grouping repeated role pairs</div></div>
+          <div class="stage outcomes">
+            <div class="outcome ok"><span class="n2">${h.confirmed}</span><span>confirmed and added to the report</span></div>
+            <div class="outcome ok"><span class="n2">${h.duplicates}</span><span>matched a native finding, raising its confidence</span></div>
+            ${h.unverified ? `<div class="outcome maybe"><span class="n2">${h.unverified}</span><span>kept but unverified</span></div>` : ""}
+            <div class="outcome no"><span class="n2">${h.falsePositives}</span><span>disproved and filtered out</span></div>
+          </div>
+        </div>
+        <div class="engines-row">
+          ${nat ? `<span>Native engine: ${plural(nat.findings, "finding")} from ${nat.checks.length} checks</span>` : ""}
+          <span>Hadrian: ${plural(h.templates.length, "template")}</span>
+          <span>Found by both engines: ${r.summary.corroborated}</span>
+        </div>
+      </section>`;
+    }
+
+    function trend(history) {
+      if (!Array.isArray(history) || history.length < 2) return "";
+      const runs = history.slice(-30);
+      const max = Math.max(1, ...runs.map((h) => h.total));
+      const w = 100 / runs.length;
+      const bars = runs.map((h, i) => {
+        let y = 90;
+        return SEV.map((s) => {
+          const n = h.counts?.[s] || 0;
+          if (!n) return "";
+          const hgt = (n / max) * 84;
+          y -= hgt;
+          return `<rect x="${i * w + w * 0.15}" y="${y}" width="${w * 0.7}" height="${hgt}" fill="var(--${SEV_VAR[s]})"><title>${new Date(h.finishedAt).toLocaleDateString()}: ${n} ${SEV_NAME[s].toLowerCase()}</title></rect>`;
+        }).join("");
+      }).join("");
+      const first = runs[0], last = runs[runs.length - 1];
+      return `<section class="trend"><h2>Findings over time</h2>
+        <p>${runs.length} scheduled scans, from ${new Date(first.finishedAt).toLocaleDateString()} to ${new Date(last.finishedAt).toLocaleDateString()}.</p>
+        <svg viewBox="0 0 100 90" preserveAspectRatio="none" role="img" aria-label="Findings per scan">${bars}</svg></section>`;
+    }
+
+    function engineTags(f) {
+      const both = f.engines?.length > 1;
+      const tags = [];
+      if (both) tags.push(`<span class="tag both">Found by both engines</span>`);
+      else tags.push(`<span class="tag">${f.engine === "hadrian" ? "Hadrian, verified" : "Native"}</span>`);
+      if (f.verification?.status === "unverified") tags.push(`<span class="tag unv">Unverified</span>`);
+      if (f.owasp) tags.push(`<span class="tag">${esc(f.owasp)}</span>`);
+      return tags.join("");
+    }
+
+    function findingCard(f, i) {
+      const v = SEV_VAR[f.severity] || "info";
+      const verif = f.verification || {};
+      const corroborated = verif.corroboratedBy?.length ? ` Independently confirmed by ${verif.corroboratedBy.join(", ")}.` : "";
+      return `<article class="finding" id="f${i}" style="--sev:var(--${v});--sev-tint:var(--${v}-tint)">
+        <button type="button" aria-expanded="false" aria-controls="fb${i}">
+          <span class="sev">${SEV_NAME[f.severity] || f.severity}</span>
+          <span><span class="ftitle">${esc(f.title)}</span><code class="ep">${esc(f.endpoint)}</code></span>
+          <span class="tags">${engineTags(f)}</span>
+        </button>
+        <div class="fbody" id="fb${i}">
+          <div class="meaning"><p><strong>What this means.</strong> ${esc(MEANING[f.checkId] || f.detail || "")}</p></div>
+          <h3>What we saw</h3>
+          <p>${esc(f.summary)}</p>
+          <p class="how">Checked by ${esc(verif.method || "replay")}. Confidence ${Math.round((f.confidence || 0) * 100)}%.${esc(corroborated)}</p>
+          <h3>Reproduce it</h3>
+          <div class="codebox"><pre><code>${esc(f.poc || "No reproduction command recorded.")}</code></pre>${f.poc ? `<button class="copy" type="button" data-copy="${i}">Copy</button>` : ""}</div>
+          <h3>How to fix it</h3>
+          <p>${esc(f.remediation)}</p>
+          <details class="raw"><summary>Evidence</summary><pre><code>${esc(JSON.stringify(f.evidence, null, 2))}</code></pre></details>
+        </div>
+      </article>`;
+    }
+
+    function filteredList(r) {
+      const list = r.filtered || [];
+      if (!list.length) return "";
+      const items = list.map((f) => {
+        const dup = f.verification.status === "duplicate";
+        return `<li><span class="st ${dup ? "dup" : ""}">${dup ? "Merged" : "False positive"}</span>
+          <span><strong>${esc(f.title)}</strong> <code class="mono">${esc(f.endpoint)}</code><br><span class="why">${esc(f.verification.reason)}</span></span></li>`;
+      }).join("");
+      return `<section class="noise" aria-labelledby="noise-h">
+        <h2 id="noise-h">Filtered out (${list.length})</h2>
+        <p>Engine alerts SentinelAPI did not report, and why. Nothing is dropped silently.</p>
+        <ul class="noise-list">${items}</ul></section>`;
+    }
+
+    function visible(r) {
+      const q = state.q.trim().toLowerCase();
+      return r.findings.filter((f) =>
+        (state.sev === "all" || f.severity === state.sev) &&
+        (state.engine === "all" || (state.engine === "both" ? f.engines?.length > 1 : f.engines?.includes(state.engine))) &&
+        (!q || `${f.title} ${f.endpoint} ${f.summary}`.toLowerCase().includes(q))
+      );
+    }
+
+    function renderList(r) {
+      const rows = visible(r);
+      $("#count").textContent = rows.length === r.findings.length ? `${rows.length} shown` : `${rows.length} of ${r.findings.length} shown`;
+      $("#rows").innerHTML = rows.length
+        ? rows.map((f) => findingCard(f, r.findings.indexOf(f))).join("")
+        : `<div class="empty">No findings match these filters.</div>`;
+    }
+
+    function seg(name, options) {
+      return `<div class="seg" role="group" aria-label="${name}">${options.map(([val, label]) =>
+        `<button type="button" data-${name}="${val}" aria-pressed="${state[name] === val}">${label}</button>`).join("")}</div>`;
+    }
+
+    function render(r, history) {
+      document.title = `SentinelAPI: ${r.summary.total} findings`;
+      $("#target").innerHTML = `<span>Target <code>${esc(r.target.baseUrl)}</code></span><span>Scanned ${esc(new Date(r.finishedAt).toLocaleString())}</span>`;
+      const { h, p } = verdictLine(r);
+      const sevOpts = [["all", "All"], ...SEV.filter((s) => r.summary.counts[s]).map((s) => [s, SEV_NAME[s]])];
+      const engOpts = r.engines?.hadrian ? [["all", "Any engine"], ["native", "Native"], ["hadrian", "Hadrian"], ["both", "Both"]] : null;
+
+      $("#app").innerHTML = `
+        <section class="verdict"><h1>${esc(h)}</h1><p>${esc(p)}</p>${severityStrip(r)}</section>
+        ${funnel(r)}
+        ${trend(history)}
+        <section class="list" aria-labelledby="list-h">
+          <div class="list-head"><h2 id="list-h">Findings, most severe first</h2><span class="count" id="count"></span></div>
+          <div class="controls">
+            ${seg("sev", sevOpts)}
+            ${engOpts ? seg("engine", engOpts) : ""}
+            <input class="search" id="q" type="search" placeholder="Search endpoints and findings" aria-label="Search findings" />
+          </div>
+          <div id="rows"></div>
+        </section>
+        ${filteredList(r)}
+        <footer>SentinelAPI ${esc(r.version)}. Native checks plus the <a href="https://github.com/praetorian-inc/hadrian">Hadrian</a> engine (Apache-2.0), verified before reporting. Only scan APIs you are authorized to test.</footer>`;
+
+      renderList(r);
+
+      $("#app").addEventListener("click", async (e) => {
+        const segBtn = e.target.closest(".seg button");
+        if (segBtn) {
+          const [key, val] = Object.entries(segBtn.dataset)[0];
+          state[key] = val;
+          segBtn.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === segBtn));
+          renderList(r);
+          return;
+        }
+        const copy = e.target.closest(".copy");
+        if (copy) {
+          const text = r.findings[Number(copy.dataset.copy)].poc;
+          try { await navigator.clipboard.writeText(text); copy.textContent = "Copied"; }
+          catch { copy.textContent = "Select and copy"; }
+          setTimeout(() => (copy.textContent = "Copy"), 1600);
+          return;
+        }
+        const head = e.target.closest(".finding > button");
+        if (head) {
+          const card = head.parentElement;
+          const open = card.classList.toggle("open");
+          head.setAttribute("aria-expanded", open);
+        }
+      });
+      $("#q").addEventListener("input", (e) => { state.q = e.target.value; renderList(r); });
+    }
+
     load();
   </script>
 </body>
