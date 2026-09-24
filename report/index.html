@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentinelAPI — Findings</title>
+  <style>
+    :root {
+      --bg: #0d1117; --panel: #161b22; --panel-2: #1c2230; --border: #2a2f3a;
+      --text: #e6edf3; --muted: #9aa4b2; --accent: #58a6ff;
+      --crit: #f85149; --high: #ff9800; --med: #d4a72c; --low: #3fb950; --info: #8b949e;
+    }
+    :root[data-theme="light"] {
+      --bg: #f6f8fa; --panel: #ffffff; --panel-2: #f0f3f6; --border: #d0d7de;
+      --text: #1f2328; --muted: #57606a; --accent: #0969da;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { padding: 24px 20px; border-bottom: 1px solid var(--border); display: flex;
+      align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .brand { display: flex; align-items: baseline; gap: 12px; }
+    .brand h1 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
+    .brand .tag { color: var(--muted); font-size: 13px; }
+    main { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 28px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .card .n { font-size: 28px; font-weight: 700; }
+    .card .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .finding { background: var(--panel); border: 1px solid var(--border); border-left-width: 4px;
+      border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+    .finding.CRITICAL { border-left-color: var(--crit); }
+    .finding.HIGH { border-left-color: var(--high); }
+    .finding.MEDIUM { border-left-color: var(--med); }
+    .finding.LOW { border-left-color: var(--low); }
+    .finding.INFO { border-left-color: var(--info); }
+    .fhead { padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+    .badge.CRITICAL { background: rgba(248,81,73,.15); color: var(--crit); }
+    .badge.HIGH { background: rgba(255,152,0,.15); color: var(--high); }
+    .badge.MEDIUM { background: rgba(212,167,44,.15); color: var(--med); }
+    .badge.LOW { background: rgba(63,185,80,.15); color: var(--low); }
+    .badge.INFO { background: rgba(139,148,158,.15); color: var(--info); }
+    .fhead .t { font-weight: 600; flex: 1; }
+    .fhead .ep { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted); }
+    .fbody { padding: 0 16px 16px; display: none; }
+    .finding.open .fbody { display: block; }
+    .fbody p { margin: 8px 0; }
+    .fbody .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 14px; }
+    pre { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+      overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; margin: 6px 0 0; }
+    .conf { font-size: 12px; color: var(--muted); }
+    button.theme { background: var(--panel); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+    .empty { text-align: center; color: var(--muted); padding: 60px 20px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>SentinelAPI</h1>
+      <span class="tag">Zero-Trust API Vulnerability Scanner</span>
+    </div>
+    <button class="theme" onclick="toggleTheme()">Toggle theme</button>
+  </header>
+  <main>
+    <div class="meta" id="meta">Loading report…</div>
+    <div class="cards" id="cards"></div>
+    <div id="findings"></div>
+  </main>
+
+  <script>
+    function toggleTheme() {
+      const r = document.documentElement;
+      r.dataset.theme = r.dataset.theme === "light" ? "dark" : "light";
+    }
+    const SEV = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"];
+    function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+
+    async function load() {
+      let report;
+      try {
+        const res = await fetch("data/latest.json", { cache: "no-store" });
+        report = await res.json();
+      } catch (e) {
+        document.getElementById("meta").textContent = "No report found. Run: npm run scan:demo";
+        return;
+      }
+      render(report);
+    }
+
+    function render(report) {
+      document.getElementById("meta").innerHTML =
+        `Target <strong>${esc(report.target.baseUrl)}</strong> · scanned ${new Date(report.finishedAt).toLocaleString()} · checks: ${report.checksRun.join(", ")}`;
+
+      const cards = document.getElementById("cards");
+      cards.innerHTML = `<div class="card"><div class="n">${report.summary.total}</div><div class="l">Total</div></div>` +
+        SEV.map(s => `<div class="card"><div class="n" style="color:var(--${s.toLowerCase().slice(0,4)})">${report.summary.counts[s] || 0}</div><div class="l">${s}</div></div>`).join("");
+
+      const wrap = document.getElementById("findings");
+      if (!report.findings.length) { wrap.innerHTML = '<div class="empty">No findings. 🎉</div>'; return; }
+
+      wrap.innerHTML = report.findings.map((f, i) => `
+        <div class="finding ${f.severity}" id="f${i}">
+          <div class="fhead" onclick="document.getElementById('f${i}').classList.toggle('open')">
+            <span class="badge ${f.severity}">${f.severity}</span>
+            <span class="t">${esc(f.title)}</span>
+            <span class="ep">${esc(f.endpoint)}</span>
+          </div>
+          <div class="fbody">
+            <p>${esc(f.summary)}</p>
+            <p class="conf">Confidence: ${Math.round((f.confidence || 0) * 100)}%</p>
+            <p>${esc(f.detail || "")}</p>
+            <div class="label">Remediation</div>
+            <p>${esc(f.remediation || "")}</p>
+            <div class="label">Reproduce (proof-of-concept)</div>
+            <pre>${esc(f.poc || "n/a")}</pre>
+            <div class="label">Evidence</div>
+            <pre>${esc(JSON.stringify(f.evidence, null, 2))}</pre>
+          </div>
+        </div>`).join("");
+    }
+    load();
+  </script>
+</body>
+</html>

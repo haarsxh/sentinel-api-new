@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  scanner-selftest:
+    name: Scanner self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run scanner self-test
+        run: npm test
+
+      - name: Upload findings report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-report
+          path: report/data/latest.json
+          if-no-files-found: ignore
+
+  # Demonstrates how a real project would gate deploys on API findings.
+  # Runs the scanner against the bundled sandbox and fails on HIGH+ findings.
+  security-gate-example:
+    name: Security gate (demo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Start sandbox target
+        run: |
+          node demo-api/server.js &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4000/health && break; sleep 0.3; done
+      - name: Scan (gate on HIGH+)
+        run: node scanner/cli.js --config scanner/targets/demo.json --fail-on high
+        continue-on-error: true # sandbox is intentionally vulnerable; this step is illustrative

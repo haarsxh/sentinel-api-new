@@ -1,0 +1,17 @@
+{
+  "name": "sentinel-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-trust API vulnerability scanner with a bundled sandboxed test target (AmiHacks Track C)",
+  "type": "module",
+  "scripts": {
+    "demo": "node demo-api/server.js",
+    "scan": "node scanner/cli.js",
+    "scan:demo": "node scanner/cli.js --config scanner/targets/demo.json",
+    "report": "node report/serve.js",
+    "test": "node scanner/selftest.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "demo",
+  "specPath": "demo-api/openapi.json",
+  "baseUrl": "http://127.0.0.1:4000",
+  "auth": {
+    "loginPath": "/login",
+    "tokenField": "token",
+    "header": "Authorization",
+    "scheme": "Bearer"
+  },
+  "identities": [
+    { "label": "alice", "credentials": { "username": "alice", "password": "alice-password" } },
+    { "label": "bob", "credentials": { "username": "bob", "password": "bob-password" } }
+  ],
+  "seededObjectIds": {
+    "/orders/{id}": { "alice": [1001, 1002], "bob": [2001] },
+    "/users/{id}": { "alice": [1], "bob": [2] },
+    "/documents/{id}": { "alice": ["doc-a1"], "bob": ["doc-b1"] }
+  },
+  "rateLimit": { "burst": 12 }
+}

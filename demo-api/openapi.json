@@ -1,0 +1,86 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Demo Target API",
+    "version": "1.0.0",
+    "description": "Sandboxed intentionally-vulnerable API used as SentinelAPI's local test target."
+  },
+  "servers": [{ "url": "http://127.0.0.1:4000" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer" }
+    }
+  },
+  "paths": {
+    "/login": {
+      "post": {
+        "summary": "Authenticate and receive a bearer token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "token issued" } }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "summary": "Get an order by id",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "the order" } }
+      }
+    },
+    "/my/orders": {
+      "get": {
+        "summary": "List the caller's own orders",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "orders owned by caller" } }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Get a user by id",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "the user" } }
+      }
+    },
+    "/profile": {
+      "get": {
+        "summary": "Get the caller's own profile",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "caller profile" } }
+      }
+    },
+    "/documents/{id}": {
+      "get": {
+        "summary": "Get a document by id",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "the document" } }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": { "200": { "description": "ok" } }
+      }
+    }
+  }
+}
