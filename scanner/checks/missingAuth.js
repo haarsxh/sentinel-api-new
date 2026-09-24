@@ -8,6 +8,8 @@ import { toCurl } from "../lib/poc.js";
 
 export const id = "missing-auth";
 export const title = "Missing Authentication Enforcement";
+export const owasp = "API2:2023";
+export const verification = "unauthenticated replay";
 
 export async function run(ctx) {
   const { config, ops, request } = ctx;

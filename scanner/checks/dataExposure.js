@@ -8,6 +8,8 @@ import { toCurl } from "../lib/poc.js";
 
 export const id = "data-exposure";
 export const title = "Excessive Data Exposure";
+export const owasp = "API3:2023";
+export const verification = "response field analysis";
 
 export async function run(ctx) {
   const { config, ops, sessions, request } = ctx;

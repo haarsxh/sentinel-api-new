@@ -2,7 +2,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { rank, SEVERITY } from "./severity.js";
 
-export function buildReport({ target, findings, checksRun, startedAt }) {
+export function buildReport({ target, findings, filtered = [], engines = {}, checksRun, startedAt }) {
   const ranked = rank(findings);
   const counts = {};
   for (const key of Object.keys(SEVERITY)) counts[key] = 0;
@@ -10,17 +10,22 @@ export function buildReport({ target, findings, checksRun, startedAt }) {
 
   return {
     tool: "SentinelAPI",
-    version: "0.1.0",
+    version: "0.2.0",
     target,
     startedAt,
     finishedAt: new Date().toISOString(),
     checksRun,
+    engines,
     summary: {
       total: ranked.length,
       counts,
       highestSeverity: ranked[0]?.severity || "NONE",
+      corroborated: ranked.filter((f) => f.engines?.length > 1).length,
+      filtered: filtered.length,
     },
     findings: ranked,
+    // Engine candidates SentinelAPI disproved or merged, kept for transparency.
+    filtered,
   };
 }
 

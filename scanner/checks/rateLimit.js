@@ -10,6 +10,8 @@ import { toCurl } from "../lib/poc.js";
 
 export const id = "rate-limit";
 export const title = "Missing Rate Limiting (Authentication)";
+export const owasp = "API4:2023";
+export const verification = "bounded failed-login burst";
 
 export async function run(ctx) {
   const { config, request } = ctx;

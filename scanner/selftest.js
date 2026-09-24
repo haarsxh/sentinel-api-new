@@ -65,6 +65,20 @@ async function main() {
     assert(!endpoints.some((e) => e.includes("/profile")), "does NOT flag secure /profile");
 
     assert(report.summary.highestSeverity === "CRITICAL", "reports CRITICAL as highest severity");
+
+    // Hadrian engine (runs when installed; CI sets SENTINEL_REQUIRE_HADRIAN=1).
+    const h = report.engines?.hadrian;
+    if (process.env.SENTINEL_REQUIRE_HADRIAN === "1") assert(Boolean(h), "hadrian engine ran");
+    if (h) {
+      console.log("[selftest] asserting hadrian candidates are verified …");
+      const filtered = report.filtered || [];
+      assert(h.rawCandidates > 0, `hadrian produced raw candidates (${h.rawCandidates})`);
+      assert(byCheck.has("debug-disclosure"), "confirms hadrian's stack-trace disclosure finding");
+      assert(report.summary.corroborated > 0, "corroborates native findings with hadrian");
+      const fpOn = (ep) => filtered.some((f) => f.verification.status === "false-positive" && f.endpoint.includes(ep));
+      assert(fpOn("/my/orders") && fpOn("/profile"), "rejects hadrian's false positives on secure controls");
+      assert(filtered.every((f) => f.verification.reason), "every filtered candidate carries a reason");
+    }
   } catch (err) {
     console.error(`[selftest] error: ${err.message}`);
     failures++;

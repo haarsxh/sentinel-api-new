@@ -12,7 +12,8 @@ export function toCurl(req, { redact = true } = {}) {
     }
     parts.push(`-H '${k}: ${value}'`);
   }
-  if (req.body) parts.push(`-d '${JSON.stringify(req.body)}'`);
+  if (req.rawBody !== undefined) parts.push(`-d '${req.rawBody}'`);
+  else if (req.body) parts.push(`-d '${JSON.stringify(req.body)}'`);
   parts.push(`'${req.url}'`);
   return parts.join(" ");
 }

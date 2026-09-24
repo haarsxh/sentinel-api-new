@@ -1,11 +1,12 @@
 {
   "name": "sentinel-api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Zero-trust API vulnerability scanner with a bundled sandboxed test target (AmiHacks Track C)",
+  "description": "Zero-trust API vulnerability scanner: native checks + verified Hadrian engine, findings dashboard, CI/CD gate",
   "type": "module",
   "scripts": {
     "demo": "node demo-api/server.js",
+    "setup:hadrian": "bash scripts/setup-hadrian.sh",
     "scan": "node scanner/cli.js",
     "scan:demo": "node scanner/cli.js --config scanner/targets/demo.json",
     "report": "node report/serve.js",

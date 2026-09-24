@@ -30,6 +30,7 @@ export async function establishSessions(config) {
 
     sessions.push({
       label: identity.label,
+      level: identity.level ?? 10,
       headers: authHeader ? { [header]: authHeader } : {},
       authHeader,
     });

@@ -9,13 +9,15 @@
     "scheme": "Bearer"
   },
   "identities": [
-    { "label": "alice", "credentials": { "username": "alice", "password": "alice-password" } },
-    { "label": "bob", "credentials": { "username": "bob", "password": "bob-password" } }
+    { "label": "alice", "level": 10, "credentials": { "username": "alice", "password": "alice-password" } },
+    { "label": "bob", "level": 10, "credentials": { "username": "bob", "password": "bob-password" } },
+    { "label": "admin", "level": 100, "credentials": { "username": "admin", "password": "admin-password" } }
   ],
   "seededObjectIds": {
-    "/orders/{id}": { "alice": [1001, 1002], "bob": [2001] },
-    "/users/{id}": { "alice": [1], "bob": [2] },
+    "/orders/{id}": { "alice": [1001, 1002], "bob": [2001], "admin": [3001] },
+    "/users/{id}": { "alice": [1], "bob": [2], "admin": [3] },
     "/documents/{id}": { "alice": ["doc-a1"], "bob": ["doc-b1"] }
   },
-  "rateLimit": { "burst": 12 }
+  "rateLimit": { "burst": 12 },
+  "hadrian": { "rateLimit": 20 }
 }
