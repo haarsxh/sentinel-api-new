@@ -56,7 +56,7 @@ jobs:
           cp report/index.html _site/
           cp report/data/latest.json _site/data/
           node scripts/append-history.mjs "${{ steps.pages.outputs.base_url }}/data/history.json" report/data/latest.json _site/data/history.json
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
