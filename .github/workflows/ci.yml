@@ -38,7 +38,7 @@ jobs:
           go-version: "1.26"
           cache: false
       - name: Cache Hadrian build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/go/bin/hadrian
